@@ -10,6 +10,7 @@
         "cupertino_icons",
         "desktop_multi_window",
         "flutter",
+        "screen_retriever",
         "window_manager"
       ],
       "devDependencies": [
@@ -46,6 +47,17 @@
       "name": "cupertino_icons",
       "version": "1.0.8",
       "dependencies": []
+    },
+    {
+      "name": "screen_retriever",
+      "version": "0.2.0",
+      "dependencies": [
+        "flutter",
+        "screen_retriever_linux",
+        "screen_retriever_macos",
+        "screen_retriever_platform_interface",
+        "screen_retriever_windows"
+      ]
     },
     {
       "name": "window_manager",
@@ -165,14 +177,36 @@
       ]
     },
     {
-      "name": "screen_retriever",
+      "name": "screen_retriever_windows",
       "version": "0.2.0",
       "dependencies": [
         "flutter",
-        "screen_retriever_linux",
-        "screen_retriever_macos",
-        "screen_retriever_platform_interface",
-        "screen_retriever_windows"
+        "screen_retriever_platform_interface"
+      ]
+    },
+    {
+      "name": "screen_retriever_platform_interface",
+      "version": "0.2.0",
+      "dependencies": [
+        "flutter",
+        "json_annotation",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "screen_retriever_macos",
+      "version": "0.2.0",
+      "dependencies": [
+        "flutter",
+        "screen_retriever_platform_interface"
+      ]
+    },
+    {
+      "name": "screen_retriever_linux",
+      "version": "0.2.0",
+      "dependencies": [
+        "flutter",
+        "screen_retriever_platform_interface"
       ]
     },
     {
@@ -250,44 +284,6 @@
       ]
     },
     {
-      "name": "screen_retriever_windows",
-      "version": "0.2.0",
-      "dependencies": [
-        "flutter",
-        "screen_retriever_platform_interface"
-      ]
-    },
-    {
-      "name": "screen_retriever_platform_interface",
-      "version": "0.2.0",
-      "dependencies": [
-        "flutter",
-        "json_annotation",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "screen_retriever_macos",
-      "version": "0.2.0",
-      "dependencies": [
-        "flutter",
-        "screen_retriever_platform_interface"
-      ]
-    },
-    {
-      "name": "screen_retriever_linux",
-      "version": "0.2.0",
-      "dependencies": [
-        "flutter",
-        "screen_retriever_platform_interface"
-      ]
-    },
-    {
-      "name": "vm_service",
-      "version": "15.0.2",
-      "dependencies": []
-    },
-    {
       "name": "plugin_platform_interface",
       "version": "2.1.8",
       "dependencies": [
@@ -300,6 +296,11 @@
       "dependencies": [
         "meta"
       ]
+    },
+    {
+      "name": "vm_service",
+      "version": "15.0.2",
+      "dependencies": []
     }
   ],
   "configVersion": 1

@@ -11,7 +11,6 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
-    // Platform-specific setup
     if (Platform.isWindows) {
       await _setupWindowsFloatingBar();
     } else if (Platform.isMacOS) {
@@ -20,7 +19,6 @@ Future<void> main(List<String> args) async {
 
     runApp(FloatingBarApp());
   } else {
-    // Main app setup
     WindowOptions mainWindowOptions = const WindowOptions(
       size: Size(800, 600),
       center: true,
@@ -37,14 +35,14 @@ Future<void> main(List<String> args) async {
   }
 }
 
-// Windows floating bar setup
 Future<void> _setupWindowsFloatingBar() async {
+  // Same as macOS - larger window to accommodate rendering issues
   WindowOptions windowOptions = const WindowOptions(
-    size: Size(20, 400),
+    size: Size(30, 410),
     alwaysOnTop: true,
     skipTaskbar: true,
     titleBarStyle: TitleBarStyle.hidden,
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.transparent,
   );
 
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -52,7 +50,7 @@ Future<void> _setupWindowsFloatingBar() async {
     await windowManager.setAlwaysOnTop(true);
     await windowManager.setSkipTaskbar(true);
     await windowManager.setResizable(false);
-    await windowManager.setBackgroundColor(Colors.black);
+    await windowManager.setBackgroundColor(Colors.transparent);
 
     final display = await screenRetriever.getPrimaryDisplay();
     final screenWidth = display.size.width;
@@ -60,8 +58,8 @@ Future<void> _setupWindowsFloatingBar() async {
 
     await windowManager.setPosition(
       Offset(
-        (screenWidth / 2) - 10,
-        screenHeight - 420,
+        (screenWidth / 2) - 15,
+        screenHeight - 430,
       ),
     );
 
@@ -69,10 +67,9 @@ Future<void> _setupWindowsFloatingBar() async {
   });
 }
 
-// macOS floating bar setup
 Future<void> _setupMacOSFloatingBar() async {
   WindowOptions windowOptions = const WindowOptions(
-    size: Size(20, 400),
+    size: Size(30, 410),
     alwaysOnTop: true,
     skipTaskbar: true,
     titleBarStyle: TitleBarStyle.hidden,
@@ -93,8 +90,8 @@ Future<void> _setupMacOSFloatingBar() async {
 
     await windowManager.setPosition(
       Offset(
-        (screenWidth / 2) - 10,
-        screenHeight - 420,
+        (screenWidth / 2) - 15,
+        screenHeight - 430,
       ),
     );
 
@@ -143,14 +140,26 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('StaffCo Main')),
+      appBar: AppBar(
+        title: Text('StaffCo Main'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.timer, size: 80),
+            Icon(Icons.timer, size: 80, color: Colors.blue),
             SizedBox(height: 20),
-            Text('Floating bar is active'),
+            Text(
+              'Floating bar is active',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'The bar will appear at the bottom center',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
           ],
         ),
       ),
@@ -161,13 +170,10 @@ class _MainScreenState extends State<MainScreen> {
 class FloatingBarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Platform-specific background
-    final bgColor = Platform.isWindows ? Colors.black : Colors.transparent;
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.transparent,
         body: FloatingBarWidget(),
       ),
     );
@@ -208,94 +214,99 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
     double x = position.dx;
     double y = position.dy;
 
-    x = x.clamp(0.0, screenSize!.width - 20);
-    y = y.clamp(0.0, screenSize!.height - 400);
+    x = x.clamp(0.0, screenSize!.width - 30);
+    y = y.clamp(0.0, screenSize!.height - 410);
 
     await windowManager.setPosition(Offset(x, y));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Platform-specific cursor
     final dragCursor = Platform.isWindows
         ? SystemMouseCursors.move
         : SystemMouseCursors.grab;
-    final draggingCursor = Platform.isWindows
-        ? SystemMouseCursors.grabbing
-        : SystemMouseCursors.grabbing;
+    final draggingCursor = SystemMouseCursors.grabbing;
 
-    return MouseRegion(
-      cursor: isDragging ? draggingCursor : dragCursor,
-      child: GestureDetector(
-        onPanStart: (details) {
-          setState(() {
-            isDragging = true;
-          });
-        },
-        onPanUpdate: (details) {
-          windowManager.startDragging();
-        },
-        onPanEnd: (details) {
-          _handleDragEnd();
-        },
-        child: Container(
-          width: 20,
-          height: 400,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            // macOS: no border radius, Windows: also no border radius
-            borderRadius: BorderRadius.zero,
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: 60,
-                child: Center(
-                  child: Icon(
-                    Icons.apps,
-                    color: Colors.grey.shade600,
-                    size: 14,
-                  ),
-                ),
+    // Both platforms: Center the bar inside larger window
+    return Center(
+      child: MouseRegion(
+        cursor: isDragging ? draggingCursor : dragCursor,
+        child: GestureDetector(
+          onPanStart: (details) {
+            setState(() {
+              isDragging = true;
+            });
+          },
+          onPanUpdate: (details) {
+            windowManager.startDragging();
+          },
+          onPanEnd: (details) {
+            _handleDragEnd();
+          },
+          child: ClipRect(
+            child: Container(
+              width: 20,
+              height: 400,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.zero,
               ),
-
-              Spacer(),
-
-              RotatedBox(
-                quarterTurns: 3,
-                child: Text(
-                  'Desktop App',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
+              child: Column(
+                children: _buildBarContent(),
               ),
-
-              Spacer(),
-
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () async {
-                    await windowManager.close();
-                  },
-                  child: Container(
-                    height: 40,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.grey.shade600,
-                      size: 14,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 10),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildBarContent() {
+    return [
+      Container(
+        height: 60,
+        child: Center(
+          child: Icon(
+            Icons.apps,
+            color: Colors.grey.shade600,
+            size: 14,
+          ),
+        ),
+      ),
+
+      Spacer(),
+
+      RotatedBox(
+        quarterTurns: 3,
+        child: Text(
+          'Desktop App',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+          ),
+        ),
+      ),
+
+      Spacer(),
+
+      MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () async {
+            await windowManager.close();
+          },
+          child: Container(
+            height: 40,
+            child: Icon(
+              Icons.close,
+              color: Colors.grey.shade600,
+              size: 14,
+            ),
+          ),
+        ),
+      ),
+
+      SizedBox(height: 10),
+    ];
   }
 }
