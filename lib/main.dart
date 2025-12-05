@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
+import 'dart:io';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,35 +11,16 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(20, 400),
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      titleBarStyle: TitleBarStyle.hidden,
-    );
-
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.setAsFrameless();
-      await windowManager.setAlwaysOnTop(true);
-      await windowManager.setSkipTaskbar(true);
-      await windowManager.setResizable(false);
-
-      final display = await screenRetriever.getPrimaryDisplay();
-      final screenWidth = display.size.width;
-      final screenHeight = display.size.height;
-
-      await windowManager.setPosition(
-        Offset(
-          (screenWidth / 2) - 10,
-          screenHeight - 420,
-        ),
-      );
-
-      await windowManager.show();
-    });
+    // Platform-specific setup
+    if (Platform.isWindows) {
+      await _setupWindowsFloatingBar();
+    } else if (Platform.isMacOS) {
+      await _setupMacOSFloatingBar();
+    }
 
     runApp(FloatingBarApp());
   } else {
+    // Main app setup
     WindowOptions mainWindowOptions = const WindowOptions(
       size: Size(800, 600),
       center: true,
@@ -53,6 +35,71 @@ Future<void> main(List<String> args) async {
 
     runApp(MainApp());
   }
+}
+
+// Windows floating bar setup
+Future<void> _setupWindowsFloatingBar() async {
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(20, 400),
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    titleBarStyle: TitleBarStyle.hidden,
+    backgroundColor: Colors.black,
+  );
+
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.setAsFrameless();
+    await windowManager.setAlwaysOnTop(true);
+    await windowManager.setSkipTaskbar(true);
+    await windowManager.setResizable(false);
+    await windowManager.setBackgroundColor(Colors.black);
+
+    final display = await screenRetriever.getPrimaryDisplay();
+    final screenWidth = display.size.width;
+    final screenHeight = display.size.height;
+
+    await windowManager.setPosition(
+      Offset(
+        (screenWidth / 2) - 10,
+        screenHeight - 420,
+      ),
+    );
+
+    await windowManager.show();
+  });
+}
+
+// macOS floating bar setup
+Future<void> _setupMacOSFloatingBar() async {
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(20, 400),
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    titleBarStyle: TitleBarStyle.hidden,
+    backgroundColor: Colors.transparent,
+  );
+
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.setAsFrameless();
+    await windowManager.setAlwaysOnTop(true);
+    await windowManager.setSkipTaskbar(true);
+    await windowManager.setResizable(false);
+    await windowManager.setHasShadow(false);
+    await windowManager.setBackgroundColor(Colors.transparent);
+
+    final display = await screenRetriever.getPrimaryDisplay();
+    final screenWidth = display.size.width;
+    final screenHeight = display.size.height;
+
+    await windowManager.setPosition(
+      Offset(
+        (screenWidth / 2) - 10,
+        screenHeight - 420,
+      ),
+    );
+
+    await windowManager.show();
+  });
 }
 
 class MainApp extends StatelessWidget {
@@ -114,9 +161,13 @@ class _MainScreenState extends State<MainScreen> {
 class FloatingBarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Platform-specific background
+    final bgColor = Platform.isWindows ? Colors.black : Colors.transparent;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
+        backgroundColor: bgColor,
         body: FloatingBarWidget(),
       ),
     );
@@ -165,8 +216,16 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Platform-specific cursor
+    final dragCursor = Platform.isWindows
+        ? SystemMouseCursors.move
+        : SystemMouseCursors.grab;
+    final draggingCursor = Platform.isWindows
+        ? SystemMouseCursors.grabbing
+        : SystemMouseCursors.grabbing;
+
     return MouseRegion(
-      cursor: isDragging ? SystemMouseCursors.grabbing : SystemMouseCursors.move,
+      cursor: isDragging ? draggingCursor : dragCursor,
       child: GestureDetector(
         onPanStart: (details) {
           setState(() {
@@ -182,7 +241,11 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
         child: Container(
           width: 20,
           height: 400,
-          color: Colors.black,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            // macOS: no border radius, Windows: also no border radius
+            borderRadius: BorderRadius.zero,
+          ),
           child: Column(
             children: [
               Container(
