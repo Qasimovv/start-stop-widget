@@ -10,8 +10,9 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
+    // Floating bar window
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(400, 20),
+      size: Size(20, 400),
       alwaysOnTop: true,
       skipTaskbar: true,
       titleBarStyle: TitleBarStyle.hidden,
@@ -28,14 +29,28 @@ Future<void> main(List<String> args) async {
 
       await windowManager.setPosition(
         Offset(
-          (screenWidth / 2) - 200,
-          screenHeight - 40,
+          (screenWidth / 2) - 10,
+          screenHeight - 420,
         ),
       );
     });
 
     runApp(FloatingBarApp());
   } else {
+    // Main app window - FIX FULL SCREEN ISSUE
+    WindowOptions mainWindowOptions = const WindowOptions(
+      size: Size(800, 600), // Set fixed size
+      center: true, // Center on screen
+      backgroundColor: Colors.white,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+
+    await windowManager.waitUntilReadyToShow(mainWindowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+
     runApp(MainApp());
   }
 }
@@ -88,7 +103,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             Icon(Icons.timer, size: 80),
             SizedBox(height: 20),
-            Text('Floating bar is active at bottom'),
+            Text('Floating bar is active'),
           ],
         ),
       ),
@@ -115,7 +130,6 @@ class FloatingBarWidget extends StatefulWidget {
 }
 
 class _FloatingBarWidgetState extends State<FloatingBarWidget> {
-  bool isHorizontal = true;
   Size? screenSize;
 
   @override
@@ -147,39 +161,9 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
 
     double x = position.dx;
     double y = position.dy;
-    bool shouldBeHorizontal = false;
 
-    if (y <= 50) {
-      y = 20;
-      shouldBeHorizontal = true;
-    } else if (y >= screenSize!.height - 70) {
-      y = screenSize!.height - 40;
-      shouldBeHorizontal = true;
-    } else {
-      shouldBeHorizontal = false;
-    }
-
-    if (isHorizontal != shouldBeHorizontal) {
-      setState(() {
-        isHorizontal = shouldBeHorizontal;
-      });
-
-      if (isHorizontal) {
-        await windowManager.setSize(Size(400, 20));
-        x = x.clamp(0.0, screenSize!.width - 400);
-      } else {
-        await windowManager.setSize(Size(20, 400));
-        x = x.clamp(0.0, screenSize!.width - 20);
-        y = y.clamp(0.0, screenSize!.height - 400);
-      }
-    } else {
-      if (isHorizontal) {
-        x = x.clamp(0.0, screenSize!.width - 400);
-      } else {
-        x = x.clamp(0.0, screenSize!.width - 20);
-        y = y.clamp(0.0, screenSize!.height - 400);
-      }
-    }
+    x = x.clamp(0.0, screenSize!.width - 20);
+    y = y.clamp(0.0, screenSize!.height - 400);
 
     await windowManager.setPosition(Offset(x, y));
   }
@@ -194,73 +178,50 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
         _handleDragEnd();
       },
       child: Container(
-        width: isHorizontal ? 400 : 20,
-        height: isHorizontal ? 20 : 400,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(4), // 4px border radius
-        ),
-        child: Stack(
+        width: 20,
+        height: 400,
+        color: Colors.black,
+        child: Column(
           children: [
-            // Drag handle - 9 dots
-            Positioned(
-              left: isHorizontal ? 10 : 0,
-              top: isHorizontal ? 0 : 10,
-              child: Container(
-                width: isHorizontal ? 40 : 20,
-                height: isHorizontal ? 20 : 40,
-                child: Center(
-                  child: Icon(
-                    Icons.apps,
-                    color: Colors.grey.shade600,
-                    size: 14,
-                  ),
+            Container(
+              height: 60,
+              child: Center(
+                child: Icon(
+                  Icons.apps,
+                  color: Colors.grey.shade600,
+                  size: 14,
                 ),
               ),
             ),
 
-            // Project name
-            Center(
-              child: isHorizontal
-                  ? Text(
+            Spacer(),
+
+            RotatedBox(
+              quarterTurns: 3,
+              child: Text(
                 'Desktop App',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                 ),
-              )
-                  : RotatedBox(
-                quarterTurns: 3,
-                child: Text(
-                  'Desktop App',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
               ),
             ),
 
-            // Close button
-            Positioned(
-              right: isHorizontal ? 5 : 0,
-              bottom: isHorizontal ? 0 : 5,
-              child: Container(
-                width: isHorizontal ? 30 : 20,
-                height: isHorizontal ? 20 : 30,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  iconSize: 14,
-                  icon: Icon(
-                    Icons.close,
-                    color: Colors.grey.shade600,
-                  ),
-                  onPressed: () async {
-                    await windowManager.close();
-                  },
-                ),
+            Spacer(),
+
+            IconButton(
+              padding: EdgeInsets.zero,
+              iconSize: 14,
+              icon: Icon(
+                Icons.close,
+                color: Colors.grey.shade600,
               ),
+              onPressed: () async {
+                await windowManager.close();
+              },
             ),
+
+            SizedBox(height: 10),
           ],
         ),
       ),
