@@ -23,10 +23,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			C1H7AKjcQ+kwCao0pU5a1z442W4=
+			ecyKW0tSMoMNRpQ38JAXIzWutIM=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"0b51fb00a8dc43e93009aa34a54e5ad73e38d96e"</string>
+			<string>cdhash H"79cc8a5b4b5232830d469437f090172335aeb483"</string>
 		</dict>
 		<key>Frameworks/FlutterMacOS.framework</key>
 		<dict>
@@ -41,28 +41,28 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			CPwg4Jx6G1V0qfVjdh8xlwKLQSA=
+			VU4iXK33NojkZdgdmdXwKndobaQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"08fc20e09c7a1b5574a9f563761f3197028b4120"</string>
+			<string>cdhash H"554e225cadf73688e465d81d99d5f02a77686da4"</string>
 		</dict>
 		<key>Frameworks/screen_retriever_macos.framework</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			nucfjydVAeFs6wloL1t7QtElFJY=
+			p/Uut4AAFSu5lOLNzD0espObA84=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"9ee71f8f275501e16ceb09682f5b7b42d1251496"</string>
+			<string>cdhash H"a7f52eb78000152bb994e2cdcc3d1eb2939b03ce"</string>
 		</dict>
 		<key>Frameworks/window_manager.framework</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Bnll1p93CttXBBnpqKnevAxmtWI=
+			tvdOXb15V/zv+w8C6sRyEeL7im8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"067965d69f770adb570419e9a8a9debc0c66b562"</string>
+			<string>cdhash H"b6f74e5dbd7957fceffb0f02eac47211e2fb8a6f"</string>
 		</dict>
 		<key>MacOS/__preview.dylib</key>
 		<dict>
@@ -77,10 +77,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			WSbcsENDO8XPZqVWvvEY5emJ3HM=
+			WymWuGqMiD4kw/xYtcpt2d3cJEA=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"5926dcb043433bc5cf66a556bef118e5e989dc73"</string>
+			<string>cdhash H"5b2996b86a8c883e24c3fc58b5ca6dd9dddc2440"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>

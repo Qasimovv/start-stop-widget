@@ -1,0 +1,1 @@
+ /Users/elnurgasimov/Documents/GitHub/start-stop-widget/.dart_tool/flutter_build/1d1df7e4cdb024e785043c0606f91dd0/native_assets.json: 

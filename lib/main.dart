@@ -10,7 +10,6 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
-    // Floating bar window
     WindowOptions windowOptions = const WindowOptions(
       size: Size(20, 400),
       alwaysOnTop: true,
@@ -20,8 +19,8 @@ Future<void> main(List<String> args) async {
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
       await windowManager.setAsFrameless();
+      await windowManager.show();
 
       final display = await screenRetriever.getPrimaryDisplay();
       final screenWidth = display.size.width;
@@ -37,10 +36,9 @@ Future<void> main(List<String> args) async {
 
     runApp(FloatingBarApp());
   } else {
-    // Main app window - FIX FULL SCREEN ISSUE
     WindowOptions mainWindowOptions = const WindowOptions(
-      size: Size(800, 600), // Set fixed size
-      center: true, // Center on screen
+      size: Size(800, 600),
+      center: true,
       backgroundColor: Colors.white,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
@@ -131,6 +129,7 @@ class FloatingBarWidget extends StatefulWidget {
 
 class _FloatingBarWidgetState extends State<FloatingBarWidget> {
   Size? screenSize;
+  bool isDragging = false;
 
   @override
   void initState() {
@@ -145,6 +144,7 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
     await windowManager.setSkipTaskbar(true);
     await windowManager.setHasShadow(true);
     await windowManager.setResizable(false);
+    await windowManager.setBackgroundColor(Colors.transparent);
   }
 
   Future<void> _getScreenSize() async {
@@ -156,6 +156,10 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
 
   Future<void> _handleDragEnd() async {
     if (screenSize == null) return;
+
+    setState(() {
+      isDragging = false;
+    });
 
     final position = await windowManager.getPosition();
 
@@ -170,59 +174,75 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanUpdate: (details) {
-        windowManager.startDragging();
-      },
-      onPanEnd: (details) {
-        _handleDragEnd();
-      },
-      child: Container(
-        width: 20,
-        height: 400,
-        color: Colors.black,
-        child: Column(
-          children: [
-            Container(
-              height: 60,
-              child: Center(
-                child: Icon(
-                  Icons.apps,
-                  color: Colors.grey.shade600,
-                  size: 14,
+    return MouseRegion(
+      cursor: isDragging ? SystemMouseCursors.grabbing : SystemMouseCursors.grab,
+      child: GestureDetector(
+        onPanStart: (details) {
+          setState(() {
+            isDragging = true;
+          });
+        },
+        onPanUpdate: (details) {
+          windowManager.startDragging();
+        },
+        onPanEnd: (details) {
+          _handleDragEnd();
+        },
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 20,
+            height: 400,
+            color: Colors.black,
+            child: Column(
+              children: [
+                Container(
+                  height: 60,
+                  child: Center(
+                    child: Icon(
+                      Icons.apps,
+                      color: Colors.grey.shade600,
+                      size: 14,
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            Spacer(),
+                Spacer(),
 
-            RotatedBox(
-              quarterTurns: 3,
-              child: Text(
-                'Desktop App',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
+                RotatedBox(
+                  quarterTurns: 3,
+                  child: Text(
+                    'Desktop App',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
-              ),
+
+                Spacer(),
+
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () async {
+                      await windowManager.close();
+                    },
+                    child: Container(
+                      height: 40,
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.grey.shade600,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 10),
+              ],
             ),
-
-            Spacer(),
-
-            IconButton(
-              padding: EdgeInsets.zero,
-              iconSize: 14,
-              icon: Icon(
-                Icons.close,
-                color: Colors.grey.shade600,
-              ),
-              onPressed: () async {
-                await windowManager.close();
-              },
-            ),
-
-            SizedBox(height: 10),
-          ],
+          ),
         ),
       ),
     );
