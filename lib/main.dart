@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
-import 'dart:io' show Platform;
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,49 +10,29 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
-    // IMPORTANT: Set size BEFORE waitUntilReadyToShow
-    await windowManager.setSize(Size(20, 400));
-    await windowManager.setAsFrameless();
-
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(20, 400),
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      titleBarStyle: TitleBarStyle.hidden,
-      backgroundColor: Colors.transparent,
-    );
-
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      final display = await screenRetriever.getPrimaryDisplay();
-      final screenWidth = display.size.width;
-      final screenHeight = display.size.height;
-
-      await windowManager.setPosition(
-        Offset(
-          (screenWidth / 2) - 10,
-          screenHeight - 420,
-        ),
-      );
-
-      await windowManager.setBackgroundColor(Colors.transparent);
-      await windowManager.show();
-    });
-
     runApp(FloatingBarApp());
-  } else {
-    WindowOptions mainWindowOptions = const WindowOptions(
-      size: Size(800, 600),
-      center: true,
-      backgroundColor: Colors.white,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
+
+    await Future.delayed(Duration(milliseconds: 50));
+
+    await windowManager.setAsFrameless();
+    await windowManager.setSize(Size(20, 400));
+    await windowManager.setAlwaysOnTop(true);
+    await windowManager.setSkipTaskbar(true);
+    await windowManager.setResizable(false);
+
+    final display = await screenRetriever.getPrimaryDisplay();
+    final screenWidth = display.size.width;
+    final screenHeight = display.size.height;
+
+    await windowManager.setPosition(
+      Offset(
+        (screenWidth / 2) - 10,
+        screenHeight - 420,
+      ),
     );
 
-    await windowManager.waitUntilReadyToShow(mainWindowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
-
+    await windowManager.show();
+  } else {
     runApp(MainApp());
   }
 }
@@ -90,7 +69,7 @@ class _MainScreenState extends State<MainScreen> {
 
     await WindowController.create(
       WindowConfiguration(
-        hiddenAtLaunch: false,
+        hiddenAtLaunch: true, // GİZLİ AÇ
         arguments: 'floating_bar',
       ),
     );
@@ -119,8 +98,10 @@ class FloatingBarApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      color: Colors.transparent,
-      home: FloatingBarWidget(),
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: FloatingBarWidget(),
+      ),
     );
   }
 }
@@ -137,17 +118,7 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
   @override
   void initState() {
     super.initState();
-    _setupWindow();
     _getScreenSize();
-  }
-
-  Future<void> _setupWindow() async {
-    await windowManager.setAlwaysOnTop(true);
-    await windowManager.setAsFrameless();
-    await windowManager.setSkipTaskbar(true);
-    await windowManager.setHasShadow(true);
-    await windowManager.setResizable(false);
-    await windowManager.setBackgroundColor(Colors.transparent);
   }
 
   Future<void> _getScreenSize() async {
@@ -177,74 +148,69 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: MouseRegion(
-        cursor: isDragging ? SystemMouseCursors.grabbing : SystemMouseCursors.move,
-        child: GestureDetector(
-          onPanStart: (details) {
-            setState(() {
-              isDragging = true;
-            });
-          },
-          onPanUpdate: (details) {
-            windowManager.startDragging();
-          },
-          onPanEnd: (details) {
-            _handleDragEnd();
-          },
-          child: Container(
-            width: 20,
-            height: 400,
-            color: Colors.black,
-            child: Column(
-              children: [
-                Container(
-                  height: 60,
-                  child: Center(
+    return MouseRegion(
+      cursor: isDragging ? SystemMouseCursors.grabbing : SystemMouseCursors.move,
+      child: GestureDetector(
+        onPanStart: (details) {
+          setState(() {
+            isDragging = true;
+          });
+        },
+        onPanUpdate: (details) {
+          windowManager.startDragging();
+        },
+        onPanEnd: (details) {
+          _handleDragEnd();
+        },
+        child: Container(
+          color: Colors.black,
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                child: Center(
+                  child: Icon(
+                    Icons.apps,
+                    color: Colors.grey.shade600,
+                    size: 14,
+                  ),
+                ),
+              ),
+
+              Spacer(),
+
+              RotatedBox(
+                quarterTurns: 3,
+                child: Text(
+                  'Desktop App',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+
+              Spacer(),
+
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () async {
+                    await windowManager.close();
+                  },
+                  child: Container(
+                    height: 40,
                     child: Icon(
-                      Icons.apps,
+                      Icons.close,
                       color: Colors.grey.shade600,
                       size: 14,
                     ),
                   ),
                 ),
+              ),
 
-                Spacer(),
-
-                RotatedBox(
-                  quarterTurns: 3,
-                  child: Text(
-                    'Desktop App',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-
-                Spacer(),
-
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () async {
-                      await windowManager.close();
-                    },
-                    child: Container(
-                      height: 40,
-                      child: Icon(
-                        Icons.close,
-                        color: Colors.grey.shade600,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 10),
-              ],
-            ),
+              SizedBox(height: 10),
+            ],
           ),
         ),
       ),
