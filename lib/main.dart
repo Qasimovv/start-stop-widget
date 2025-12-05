@@ -10,29 +10,47 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
-    runApp(FloatingBarApp());
-
-    await Future.delayed(Duration(milliseconds: 50));
-
-    await windowManager.setAsFrameless();
-    await windowManager.setSize(Size(20, 400));
-    await windowManager.setAlwaysOnTop(true);
-    await windowManager.setSkipTaskbar(true);
-    await windowManager.setResizable(false);
-
-    final display = await screenRetriever.getPrimaryDisplay();
-    final screenWidth = display.size.width;
-    final screenHeight = display.size.height;
-
-    await windowManager.setPosition(
-      Offset(
-        (screenWidth / 2) - 10,
-        screenHeight - 420,
-      ),
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(20, 400),
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      titleBarStyle: TitleBarStyle.hidden,
     );
 
-    await windowManager.show();
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setAsFrameless();
+      await windowManager.setAlwaysOnTop(true);
+      await windowManager.setSkipTaskbar(true);
+      await windowManager.setResizable(false);
+
+      final display = await screenRetriever.getPrimaryDisplay();
+      final screenWidth = display.size.width;
+      final screenHeight = display.size.height;
+
+      await windowManager.setPosition(
+        Offset(
+          (screenWidth / 2) - 10,
+          screenHeight - 420,
+        ),
+      );
+
+      await windowManager.show();
+    });
+
+    runApp(FloatingBarApp());
   } else {
+    WindowOptions mainWindowOptions = const WindowOptions(
+      size: Size(800, 600),
+      center: true,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+
+    await windowManager.waitUntilReadyToShow(mainWindowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+
     runApp(MainApp());
   }
 }
@@ -69,7 +87,7 @@ class _MainScreenState extends State<MainScreen> {
 
     await WindowController.create(
       WindowConfiguration(
-        hiddenAtLaunch: true, // GİZLİ AÇ
+        hiddenAtLaunch: false,
         arguments: 'floating_bar',
       ),
     );
@@ -99,7 +117,6 @@ class FloatingBarApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Colors.black,
         body: FloatingBarWidget(),
       ),
     );
@@ -163,6 +180,8 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
           _handleDragEnd();
         },
         child: Container(
+          width: 20,
+          height: 400,
           color: Colors.black,
           child: Column(
             children: [
