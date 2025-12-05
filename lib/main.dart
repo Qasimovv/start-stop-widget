@@ -20,6 +20,7 @@ Future<void> main(List<String> args) async {
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.setAsFrameless();
+      await windowManager.setBackgroundColor(Colors.transparent);
       await windowManager.show();
 
       final display = await screenRetriever.getPrimaryDisplay();
@@ -174,73 +175,77 @@ class _FloatingBarWidgetState extends State<FloatingBarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: isDragging ? SystemMouseCursors.grabbing : SystemMouseCursors.grab,
-      child: GestureDetector(
-        onPanStart: (details) {
-          setState(() {
-            isDragging = true;
-          });
-        },
-        onPanUpdate: (details) {
-          windowManager.startDragging();
-        },
-        onPanEnd: (details) {
-          _handleDragEnd();
-        },
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: 20,
-            height: 400,
-            color: Colors.black,
-            child: Column(
-              children: [
-                Container(
-                  height: 60,
-                  child: Center(
-                    child: Icon(
-                      Icons.apps,
-                      color: Colors.grey.shade600,
-                      size: 14,
-                    ),
-                  ),
-                ),
-
-                Spacer(),
-
-                RotatedBox(
-                  quarterTurns: 3,
-                  child: Text(
-                    'Desktop App',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-
-                Spacer(),
-
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () async {
-                      await windowManager.close();
-                    },
-                    child: Container(
-                      height: 40,
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        width: 20,
+        height: 400,
+        child: MouseRegion(
+          cursor: isDragging ? SystemMouseCursors.grabbing : SystemMouseCursors.grab,
+          child: GestureDetector(
+            onPanStart: (details) {
+              setState(() {
+                isDragging = true;
+              });
+            },
+            onPanUpdate: (details) {
+              windowManager.startDragging();
+            },
+            onPanEnd: (details) {
+              _handleDragEnd();
+            },
+            child: Container(
+              width: 20,
+              height: 400,
+              color: Colors.black,
+              child: Column(
+                children: [
+                  Container(
+                    height: 60,
+                    child: Center(
                       child: Icon(
-                        Icons.close,
+                        Icons.apps,
                         color: Colors.grey.shade600,
                         size: 14,
                       ),
                     ),
                   ),
-                ),
 
-                SizedBox(height: 10),
-              ],
+                  Spacer(),
+
+                  RotatedBox(
+                    quarterTurns: 3,
+                    child: Text(
+                      'Desktop App',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+
+                  Spacer(),
+
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () async {
+                        await windowManager.close();
+                      },
+                      child: Container(
+                        height: 40,
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.grey.shade600,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 10),
+                ],
+              ),
             ),
           ),
         ),
