@@ -1,50 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
-import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'dart:async';
 
 // Global channels
 const kTimerChannel = WindowMethodChannel('timer_sync');
-
-// Extension for WindowController
-extension WindowControllerExtension on WindowController {
-  Future<void> setupWindowHandler() async {
-    return await setWindowMethodHandler((call) async {
-      switch (call.method) {
-        case 'window_hide':
-          await windowManager.hide();
-          return null;
-        case 'window_show':
-          await windowManager.show();
-          return null;
-        case 'window_is_visible':
-          final isVisible = await windowManager.isVisible();
-          return isVisible;
-        default:
-          throw MissingPluginException('Not implemented: ${call.method}');
-      }
-    });
-  }
-
-  Future<void> hide() {
-    return invokeMethod('window_hide');
-  }
-
-  Future<void> show() {
-    return invokeMethod('window_show');
-  }
-
-  Future<bool> isVisible() async {
-    try {
-      final result = await invokeMethod('window_is_visible');
-      return result == true;
-    } catch (e) {
-      return false;
-    }
-  }
-}
+const kVisibilityChannel = WindowMethodChannel('visibility_sync');
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +15,6 @@ Future<void> main(List<String> args) async {
   final windowController = await WindowController.fromCurrentEngine();
 
   if (windowController.arguments == 'floating_bar') {
-    await windowController.setupWindowHandler();
     await _setupFloatingBar();
     runApp(FloatingBarApp());
   } else {
@@ -112,14 +73,13 @@ class _MainAppState extends State<MainApp> {
   bool _isRunning = false;
   bool _isFloatingBarVisible = true;
   Timer? _timer;
-  Timer? _visibilityCheckTimer;
+  WindowController? _floatingController;
 
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration(milliseconds: 500), _openFloatingBar);
     _setupChannels();
-    _startVisibilityCheck();
   }
 
   void _setupChannels() {
@@ -136,59 +96,49 @@ class _MainAppState extends State<MainApp> {
         }
       }
     });
-  }
 
-  void _startVisibilityCheck() {
-    _visibilityCheckTimer = Timer.periodic(Duration(milliseconds: 300), (_) async {
-      await _checkFloatingBarVisibility();
-    });
-  }
-
-  Future<void> _checkFloatingBarVisibility() async {
-    try {
-      final controllers = await WindowController.getAll();
-      final floatingController = controllers.firstWhere(
-            (c) => c.arguments == 'floating_bar',
-        orElse: () => throw Exception('Not found'),
-      );
-
-      final isVisible = await floatingController.isVisible();
-
-      if (isVisible != _isFloatingBarVisible) {
+    kVisibilityChannel.setMethodCallHandler((call) async {
+      if (call.method == 'bar_hidden') {
         setState(() {
-          _isFloatingBarVisible = isVisible;
+          _isFloatingBarVisible = false;
         });
-        print('Visibility changed to: $isVisible');
+      } else if (call.method == 'bar_shown') {
+        setState(() {
+          _isFloatingBarVisible = true;
+        });
       }
-    } catch (e) {
-      // Floating bar might not exist yet
-    }
+    });
   }
 
   Future<void> _openFloatingBar() async {
     final controllers = await WindowController.getAll();
     if (controllers.any((c) => c.arguments == 'floating_bar')) return;
 
-    await WindowController.create(
+    _floatingController = await WindowController.create(
       WindowConfiguration(hiddenAtLaunch: false, arguments: 'floating_bar'),
     );
   }
 
   Future<void> _toggleFloatingBar() async {
     try {
-      final controllers = await WindowController.getAll();
-      final floatingController = controllers.firstWhere(
-            (c) => c.arguments == 'floating_bar',
-        orElse: () => throw Exception('Floating bar not found'),
-      );
-
-      if (_isFloatingBarVisible) {
-        await floatingController.hide();
-      } else {
-        await floatingController.show();
+      if (_floatingController == null) {
+        final controllers = await WindowController.getAll();
+        _floatingController = controllers.firstWhere(
+              (c) => c.arguments == 'floating_bar',
+          orElse: () => throw Exception('Floating bar not found'),
+        );
       }
 
       setState(() => _isFloatingBarVisible = !_isFloatingBarVisible);
+
+      // Notify floating bar to hide/show itself
+      try {
+        await kVisibilityChannel.invokeMethod(
+          _isFloatingBarVisible ? 'show_bar' : 'hide_bar',
+        );
+      } catch (e) {
+        print('Error sending visibility command: $e');
+      }
     } catch (e) {
       print('Error toggling floating bar: $e');
     }
@@ -237,7 +187,6 @@ class _MainAppState extends State<MainApp> {
   @override
   void dispose() {
     _timer?.cancel();
-    _visibilityCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -289,10 +238,10 @@ class _FloatingBarAppState extends State<FloatingBarApp> {
   void initState() {
     super.initState();
     _getScreenSize();
-    _setupChannel();
+    _setupChannels();
   }
 
-  void _setupChannel() {
+  void _setupChannels() {
     kTimerChannel.setMethodCallHandler((call) async {
       if (call.method == 'sync_timer') {
         setState(() {
@@ -304,6 +253,14 @@ class _FloatingBarAppState extends State<FloatingBarApp> {
         } else {
           _stopTimer();
         }
+      }
+    });
+
+    kVisibilityChannel.setMethodCallHandler((call) async {
+      if (call.method == 'hide_bar') {
+        await windowManager.hide();
+      } else if (call.method == 'show_bar') {
+        await windowManager.show();
       }
     });
   }
@@ -361,8 +318,13 @@ class _FloatingBarAppState extends State<FloatingBarApp> {
   }
 
   Future<void> _hideFloatingBar() async {
-    print('Hiding bar...');
     await windowManager.hide();
+    // Notify main app
+    try {
+      await kVisibilityChannel.invokeMethod('bar_hidden');
+    } catch (e) {
+      print('Error notifying main: $e');
+    }
   }
 
   String _formatTime() {
